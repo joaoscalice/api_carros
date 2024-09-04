@@ -128,8 +128,8 @@ router.put('/usuario/alterar/:id', verificarTokenUsuario, async (req, res) => {
 router.post('/carros', verificarTokenUsuario, async (req, res) => {
     const { marca, ano, modelo } = req.body;
 
-    if (!marca || !ano || !modelo) {
-        return res.status(400).json({ error: 'Todos os campos (marca, ano, modelo) são obrigatórios' });
+    if (!marca || !ano || !modelo || !valor) {
+        return res.status(400).json({ error: 'Todos os campos (marca, ano, modelo, valor) são obrigatórios' });
     }
 
     try {
@@ -137,6 +137,7 @@ router.post('/carros', verificarTokenUsuario, async (req, res) => {
             marca,
             ano,
             modelo,
+            valor,
             userId: req.user.id
         });
         res.status(201).json({ message: 'Carro cadastrado com sucesso', carro });
@@ -248,6 +249,24 @@ router.delete('/carros/:id', verificarTokenUsuario, async (req, res) => {
     }
 });
 
+router.get('/carros/revenda/:id', verificarTokenUsuario, async (req, res) => {
+    try {
+      const carro = await Car.findByPk(req.params.id);
+  
+      if (!carro) {
+        return res.status(404).json({ error: 'Carro não encontrado' });
+      }
+  
+      const anoAtual = new Date().getFullYear();
+      const anosUso = anoAtual - carro.ano;
+      const valorRevenda = carro.valor * (1 - (anosUso * 0.05)); 
+  
+      res.json({ message: 'Valor de revenda calculado', carro, valorRevenda });
+    } catch (err) {
+      res.status(500).json({ error: 'Erro ao calcular valor de revenda' });
+    }
+  });
+
 router.get('/install', async (req, res) => {
     try {
         await sequelize.sync({ force: true });
@@ -266,11 +285,11 @@ router.get('/install', async (req, res) => {
         console.log('Usuários inseridos com sucesso.');
 
         const carros = [
-            { marca: 'Toyota', ano: 2024, modelo: 'Corolla', userId: 2 }, 
-            { marca: 'Honda', ano: 2019, modelo: 'Civic', userId: 3 },   
-            { marca: 'Ford', ano: 2018, modelo: 'Focus', userId: 4 },   
-            { marca: 'Chevrolet', ano: 2021, modelo: 'Onix', userId: 5 }, 
-            { marca: 'Volkswagen', ano: 2017, modelo: 'Gol', userId: 2 }  
+            { marca: 'Toyota', ano: 2024, modelo: 'Corolla', valor: 138000, userId: 1 }, 
+            { marca: 'Honda', ano: 2019, modelo: 'Civic', valor: 106000, userId: 3 },   
+            { marca: 'Ford', ano: 2018, modelo: 'Focus', valor: 80000, userId: 4 },   
+            { marca: 'Chevrolet', ano: 2021, modelo: 'Onix', valor: 65000, userId: 5 }, 
+            { marca: 'Volkswagen', ano: 2017, modelo: 'Gol', valor: 42000, userId: 2 }  
         ];
 
         for (const carro of carros) {

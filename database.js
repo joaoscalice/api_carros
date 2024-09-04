@@ -29,25 +29,17 @@ const User = sequelize.define('User', {
 const Car = sequelize.define('Car', {
   id: {
     type: Sequelize.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
+    primaryKey: true
   },
-  marca: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
-  ano: {
-    type: Sequelize.INTEGER,
-    allowNull: false
-  },
-  modelo: {
-    type: Sequelize.STRING,
-    allowNull: false
-  },
+  marca: Sequelize.STRING,
+  ano: Sequelize.INTEGER,
+  modelo: Sequelize.STRING,
+  valor: Sequelize.FLOAT, 
   userId: {
     type: Sequelize.INTEGER,
     references: {
-      model: 'Users', 
+      model: 'Users',
       key: 'id'
     }
   }
