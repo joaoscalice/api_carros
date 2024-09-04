@@ -139,16 +139,35 @@ router.post('/carros', verificarTokenUsuario, async (req, res) => {
     }
 });
 
-router.get('/carros', verificarTokenUsuario, async (req, res) => {
-    if (!req.user.admin) {
-        return res.status(403).json({ error: 'Acesso restrito a administradores' });
+router.get('/carros', verificarTokenAdmin, async (req, res) => {
+    let { limite = 5, pagina = 1 } = req.body;
+
+    limite = parseInt(limite);
+    if (![5, 10, 30].includes(limite)) {
+        return res.status(400).json({ error: 'O limite deve ser 5, 10 ou 30' });
     }
 
+    pagina = parseInt(pagina);
+    if (pagina < 1) {
+        return res.status(400).json({ error: 'O valor da página deve ser maior ou igual a 1' });
+    }
+    const offset = (pagina - 1) * limite;
+
     try {
-        const carros = await Car.findAll();
-        res.json(carros);
+        const { count, rows } = await Car.findAndCountAll({
+            limit: limite,
+            offset: offset
+        });
+
+        res.json({
+            total: count,
+            paginaAtual: pagina,
+            totalPaginas: Math.ceil(count / limite),
+            carros: rows
+        });
     } catch (err) {
-        res.status(500).json({ error: 'Erro ao listar os carros' });
+        console.error('Erro ao listar carros:', err);
+        res.status(500).json({ error: 'Erro ao listar carros' });
     }
 });
 
