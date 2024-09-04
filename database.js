@@ -26,7 +26,38 @@ const User = sequelize.define('User', {
   }
 });
 
+const Car = sequelize.define('Car', {
+  id: {
+    type: Sequelize.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  marca: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  ano: {
+    type: Sequelize.INTEGER,
+    allowNull: false
+  },
+  modelo: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  userId: {
+    type: Sequelize.INTEGER,
+    references: {
+      model: 'Users', 
+      key: 'id'
+    }
+  }
+});
+
+User.hasMany(Car, { foreignKey: 'userId' });
+Car.belongsTo(User, { foreignKey: 'userId' });
+
 module.exports = {
   sequelize,
-  User
+  User,
+  Car
 };

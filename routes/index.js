@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 const { User } = require('../database');
+const { Car } = require('../database');
 var jwt = require('jsonwebtoken');
 const verificarTokenAdmin = require('../middlewares/admin');
 const verificarTokenUsuario = require('../middlewares/usuario');
@@ -116,6 +117,113 @@ router.put('/usuario/alterar/:id', verificarTokenUsuario, async (req, res) => {
   } catch (err) {
       res.status(500).json({ error: 'Erro ao atualizar os dados do usuário' });
   }
+});
+
+router.post('/carros', verificarTokenUsuario, async (req, res) => {
+    const { marca, ano, modelo } = req.body;
+
+    if (!marca || !ano || !modelo) {
+        return res.status(400).json({ error: 'Todos os campos (marca, ano, modelo) são obrigatórios' });
+    }
+
+    try {
+        const carro = await Car.create({
+            marca,
+            ano,
+            modelo,
+            userId: req.user.id
+        });
+        res.status(201).json({ message: 'Carro cadastrado com sucesso', carro });
+    } catch (err) { 
+        res.status(500).json({ error: 'Erro ao cadastrar o carro', details: err.message });
+    }
+});
+
+router.get('/carros', verificarTokenUsuario, async (req, res) => {
+    if (!req.user.admin) {
+        return res.status(403).json({ error: 'Acesso restrito a administradores' });
+    }
+
+    try {
+        const carros = await Car.findAll();
+        res.json(carros);
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao listar os carros' });
+    }
+});
+
+router.get('/carros/:id', verificarTokenUsuario, async (req, res) => {
+    if (!req.user.admin) {
+        return res.status(403).json({ error: 'Acesso restrito a administradores' });
+    }
+
+    try {
+        const carro = await Car.findByPk(req.params.id);
+
+        if (!carro) {
+            return res.status(404).json({ error: 'Carro não encontrado' });
+        }
+
+        res.json(carro);
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao buscar o carro' });
+    }
+});
+
+router.put('/carros/:id', verificarTokenUsuario, async (req, res) => {
+    const { marca, ano, modelo } = req.body;
+    const { id } = req.params;
+
+    if (!marca || !ano || !modelo) {
+        return res.status(400).json({ error: 'Todos os campos (marca, ano, modelo) são obrigatórios' });
+    }
+
+    try {
+        const carro = await Car.findByPk(id);
+
+        if (!carro) {
+            return res.status(404).json({ error: 'Carro não encontrado' });
+        }
+
+        // Verifica se o usuário pode editar o carro
+        if (req.user.admin || carro.userId === req.user.id) {
+            // Atualiza o carro
+            carro.marca = marca;
+            carro.ano = ano;
+            carro.modelo = modelo;
+            await carro.save();
+            
+            res.json({ message: 'Carro atualizado com sucesso', carro });
+        } else {
+            res.status(403).json({ error: 'Você não tem permissão para editar este carro' });
+        }
+    } catch (err) {
+        console.error('Erro ao editar o carro:', err);
+        res.status(500).json({ error: 'Erro ao editar o carro' });
+    }
+});
+
+router.delete('/carros/:id', verificarTokenUsuario, async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const carro = await Car.findByPk(id);
+
+        if (!carro) {
+            return res.status(404).json({ error: 'Carro não encontrado' });
+        }
+
+        // Verifica se o usuário pode excluir o carro
+        if (req.user.admin || carro.userId === req.user.id) {
+            await carro.destroy();
+            res.json({ message: 'Carro excluído com sucesso' });
+        } else {
+            res.status(403).json({ error: 'Você não tem permissão para excluir este carro' });
+        }
+    } catch (err) {
+        console.error('Erro ao excluir o carro:', err);
+        res.status(500).json({ error: 'Erro ao excluir o carro' });
+    }
 });
 
 module.exports = router;
