@@ -5,6 +5,12 @@ const { Car } = require('../database');
 var jwt = require('jsonwebtoken');
 const verificarTokenAdmin = require('../middlewares/admin');
 const verificarTokenUsuario = require('../middlewares/usuario');
+const { Sequelize } = require('sequelize');
+
+const sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: 'database.sqlite'
+  });
 
 router.get("/", (req, res) => {
     res.json({status: true, msg: "Isso é um teste de API"})
@@ -204,9 +210,7 @@ router.put('/carros/:id', verificarTokenUsuario, async (req, res) => {
             return res.status(404).json({ error: 'Carro não encontrado' });
         }
 
-        // Verifica se o usuário pode editar o carro
         if (req.user.admin || carro.userId === req.user.id) {
-            // Atualiza o carro
             carro.marca = marca;
             carro.ano = ano;
             carro.modelo = modelo;
@@ -232,7 +236,6 @@ router.delete('/carros/:id', verificarTokenUsuario, async (req, res) => {
             return res.status(404).json({ error: 'Carro não encontrado' });
         }
 
-        // Verifica se o usuário pode excluir o carro
         if (req.user.admin || carro.userId === req.user.id) {
             await carro.destroy();
             res.json({ message: 'Carro excluído com sucesso' });
@@ -242,6 +245,45 @@ router.delete('/carros/:id', verificarTokenUsuario, async (req, res) => {
     } catch (err) {
         console.error('Erro ao excluir o carro:', err);
         res.status(500).json({ error: 'Erro ao excluir o carro' });
+    }
+});
+
+router.get('/install', async (req, res) => {
+    try {
+        await sequelize.sync({ force: true });
+        console.log('Tabelas criadas com sucesso.');
+
+        const usuarios = [
+            { usuario: 'user1', senha: 'senha1', admin: false },
+            { usuario: 'user2', senha: 'senha2', admin: false },
+            { usuario: 'user3', senha: 'senha3', admin: false },
+            { usuario: 'user4', senha: 'senha4', admin: false }
+        ];
+        
+        for (const user of usuarios) {
+            await User.create(user);
+        }
+        console.log('Usuários inseridos com sucesso.');
+
+        const carros = [
+            { marca: 'Toyota', ano: 2024, modelo: 'Corolla', userId: 2 }, 
+            { marca: 'Honda', ano: 2019, modelo: 'Civic', userId: 3 },   
+            { marca: 'Ford', ano: 2018, modelo: 'Focus', userId: 4 },   
+            { marca: 'Chevrolet', ano: 2021, modelo: 'Onix', userId: 5 }, 
+            { marca: 'Volkswagen', ano: 2017, modelo: 'Gol', userId: 2 }  
+        ];
+
+        for (const carro of carros) {
+            await Car.create(carro);
+        }
+        console.log('Carros inseridos com sucesso.');
+
+        res.status(201).json({
+            message: 'Instalação realizada com sucesso. Banco de dados preenchido.'
+        });
+    } catch (err) {
+        console.error('Erro na instalação:', err);
+        res.status(500).json({ error: 'Erro ao realizar a instalação do banco de dados' });
     }
 });
 
