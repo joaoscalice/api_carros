@@ -8,9 +8,6 @@ function verificarTokenAdmin(req, res, next) {
         token = token[1];
     }
 
-    console.log(bearToken);
-    console.log(token);
-
     jwt.verify(token, 'abc123', async (err, decoded) => {
         if (err) {
             return res.status(500).json({ error: 'Falha ao autenticar o token.' });

@@ -13,12 +13,9 @@ async function criarAdminPadrao() {
   const adminExistente = await User.findOne({ where: { admin: true } });
 
   if (!adminExistente) {
-    const bcrypt = require('bcryptjs');
-    const senhaHash = await bcrypt.hash('admin123', 10);
-    
     await User.create({
       usuario: 'admin',
-      senha: senhaHash,
+      senha: 'admin123',
       admin: true
     });
 

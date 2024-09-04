@@ -1,9 +1,9 @@
 var express = require('express');
 var router = express.Router();
-var bcrypt = require('bcryptjs');
 const { User } = require('../database');
 var jwt = require('jsonwebtoken');
 const verificarTokenAdmin = require('../middlewares/admin');
+const verificarTokenUsuario = require('../middlewares/usuario');
 
 router.get("/", (req, res) => {
     res.json({status: true, msg: "Isso é um teste de API"})
@@ -19,11 +19,9 @@ router.post('/registrar', async (req, res) => {
         return res.status(400).json({ error: 'Nome de usuário já em uso' });
       }
   
-      const hashedPassword = await bcrypt.hash(senha, 10);
-  
       const user = await User.create({
         usuario,
-        senha: hashedPassword,
+        senha,
         admin: admin || false
       });
   
@@ -43,11 +41,9 @@ router.post('/registrar', async (req, res) => {
             return res.status(400).json({ error: 'Nome de usuário já em uso' });
         }
 
-        const hashedPassword = await bcrypt.hash(senha, 10);
-
         const admin = await User.create({
             usuario,
-            senha: hashedPassword,
+            senha,
             admin: true
         });
 
@@ -84,13 +80,7 @@ router.post('/login', async (req, res) => {
   try {
       const user = await User.findOne({ where: { usuario } });
 
-      if (!user) {
-          return res.status(400).json({ error: 'Usuário ou senha incorretos' });
-      }
-
-      const senhaValida = await bcrypt.compare(senha, user.senha);
-
-      if (!senhaValida) {
+      if (!user || user.senha !== senha) {
           return res.status(400).json({ error: 'Usuário ou senha incorretos' });
       }
 
@@ -99,6 +89,32 @@ router.post('/login', async (req, res) => {
       res.status(200).json({ message: 'Autenticação bem-sucedida', token });
   } catch (err) {
       res.status(500).json({ error: 'Erro ao tentar fazer login' });
+  }
+});
+
+router.put('/usuario/alterar/:id', verificarTokenUsuario, async (req, res) => {
+  const { id } = req.params;
+  const { usuario, senha } = req.body;
+
+  try {
+      const usuarioAlvo = await User.findByPk(id);
+
+      if (!usuarioAlvo) {
+          return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+
+      if (req.user.id !== usuarioAlvo.id && !req.user.admin) {
+          return res.status(403).json({ error: 'Você não tem permissão para alterar os dados deste usuário' });
+      }
+
+      usuarioAlvo.usuario = usuario || usuarioAlvo.usuario;
+      usuarioAlvo.senha = senha || usuarioAlvo.senha;
+
+      await usuarioAlvo.save();
+
+      res.json({ message: 'Dados do usuário atualizados com sucesso', usuario: usuarioAlvo });
+  } catch (err) {
+      res.status(500).json({ error: 'Erro ao atualizar os dados do usuário' });
   }
 });
 
