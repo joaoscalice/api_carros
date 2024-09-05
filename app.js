@@ -1,12 +1,15 @@
 var express = require('express');
 var path = require('path');
 var rotaIndex = require('./routes/index');
+const swaggerUi = require('swagger-ui-express');
+const swaggerFile = require('./swagger_output.json');
 var app = express();
 var { sequelize, User } = require('./database'); 
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 app.use('/api', rotaIndex);
 
 async function criarAdminPadrao() {
