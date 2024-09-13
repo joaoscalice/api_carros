@@ -267,6 +267,7 @@ router.get('/carros/revenda/:id', verificarTokenUsuario, async (req, res) => {
     }
   });
 
+// Rota feita em sala de aula
   router.get('/carros_usuario', verificarTokenUsuario, async (req, res) => {
     try {
         const carros = await Car.findAll({ where: { userId: req.user.id } });
@@ -279,7 +280,7 @@ router.get('/carros/revenda/:id', verificarTokenUsuario, async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: 'Erro ao buscar os carros' });
     }
-});
+}); 
 
 router.get('/install', async (req, res) => {
     try {
