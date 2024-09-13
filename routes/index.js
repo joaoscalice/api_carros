@@ -267,6 +267,20 @@ router.get('/carros/revenda/:id', verificarTokenUsuario, async (req, res) => {
     }
   });
 
+  router.get('/carros_usuario', verificarTokenUsuario, async (req, res) => {
+    try {
+        const carros = await Car.findAll({ where: { userId: req.user.id } });
+
+        if (carros.length == 0) {
+            return res.status(404).json({ message: 'Nenhum carro cadastrado para este usuário' });
+        }
+
+        res.json(carros);
+    } catch (err) {
+        res.status(500).json({ error: 'Erro ao buscar os carros' });
+    }
+});
+
 router.get('/install', async (req, res) => {
     try {
         await sequelize.sync({ force: true });
